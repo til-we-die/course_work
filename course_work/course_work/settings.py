@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'messenger',
     'accounts',
+    'profiles',
     'corsheaders',
     'drf_spectacular',
     'rest_framework_simplejwt',
