@@ -48,7 +48,13 @@ INSTALLED_APPS = [
     'channels',
 ]
 
-ASGI_APPLICATION = 'messengerapp.asgi.application'
+ASGI_APPLICATION = 'course_work.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Для тестирования используем InMemory
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
