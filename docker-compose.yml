@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: mysql_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: srenk
+      MYSQL_DATABASE: messenger_db
+      MYSQL_USER: root_user
+      MYSQL_PASSWORD: password_user
+    ports:
+      - "3307:3306"  # Проброс порта для доступа к базе данных (необязательно)
+    volumes:
+      - db_data:/var/lib/mysql  # Хранение данных для сохранения после остановки контейнера
+    networks:
+      - app_network
+
+  # Django Backend
+  backend:
+    build:
+      context: ./course_work  # Путь к папке с вашим проектом Django
+      dockerfile: Dockerfile
+    container_name: django_container
+    restart: always
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./course_work:/app  # Привязка кода для горячей перезагрузки
+    ports:
+      - "8000:8000"  # Порт для доступа к Django
+    depends_on:
+      - db  # Указывает, что сервис backend зависит от db
+    environment:
+      - ./course_work/DJANGO_SETTINGS_MODULE=course_work.settings
+    networks:
+      - app_network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./front  # Путь к папке с вашим проектом React
+      dockerfile: Dockerfile
+    container_name: react_container
+    restart: always
+    stdin_open: true
+    ports:
+      - "3000:3000"  # Порт для доступа к React
+    volumes:
+      - ./front:/app  # Привязка кода для горячей перезагрузки
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  db_data:
+
+
+#  django:
+#
+#    container_name: django
+#    build:
+#      context: ./course_work
+#    volumes:
+#      - ./course_work:/app
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - db
+#    environment:
+#      - ./course_work/DJANGO_SETTINGS_MODULE=course_work.settings
