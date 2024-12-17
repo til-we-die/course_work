@@ -1,25 +1,22 @@
-"""
-ASGI config for course_work project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
-"""
-
 import os
+import django
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from messenger import routing
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "course_work.settings")
+# Инициализация Django
+django.setup()
 
+# Устанавливаем переменную окружения для Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'course_work.settings')
+
+# Настройка ASGI приложения
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
+    "http": get_asgi_application(),  # Для обработки HTTP-запросов
+    "websocket": AuthMiddlewareStack(  # Для обработки WebSocket-соединений
         URLRouter(
-            routing.websocket_urlpatterns
+            routing.websocket_urlpatterns  # Роутинг для WebSocket
         )
     ),
 })

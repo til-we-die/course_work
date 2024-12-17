@@ -1,8 +1,14 @@
+import os
+import django
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'course_work.settings')
+django.setup()
+
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ChatRoom, Message
-from .serializers import MessageSerializer
 from asgiref.sync import sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from .models import ChatRoom
+from .serializers import MessageSerializer
 
 
 class ChatRoomConsumer(AsyncWebsocketConsumer):
@@ -11,10 +17,15 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f'chat_{self.room_name}'
 
         self.user = self.scope['user']
-        self.room = await sync_to_async(ChatRoom.objects.filter)(name=self.room_name)
-        if not self.room.exists() or not await sync_to_async(
-                lambda: self.room.first().members.filter(id=self.user.id).exists()
-        )():
+        try:
+            self.room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
+        except ChatRoom.DoesNotExist:
+            await self.close()
+            return
+
+        # Проверка, является ли пользователь участником комнаты
+        is_member = await sync_to_async(lambda: self.room.members.filter(id=self.user.id).exists())()
+        if not is_member:
             await self.close()
             return
 
@@ -31,6 +42,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data):
+        from .models import Message
         data = json.loads(text_data)
         message_content = data.get('message', '').strip()
         if not message_content:

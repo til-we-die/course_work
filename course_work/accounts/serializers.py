@@ -18,12 +18,14 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-    def validate_username(self, value):
+    @staticmethod
+    def validate_username(value):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("Имя пользователя уже используется.")
         return value
 
-    def validate_email(self, value):
+    @staticmethod
+    def validate_email(value):
         try:
             validate_email(value)
         except ValidationError:
@@ -32,7 +34,8 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Электронная почта уже используется.")
         return value
 
-    def validate_password(self, value):
+    @staticmethod
+    def validate_password(value):
         if len(value) < 8 or not any(c.isdigit() for c in value) or not any(c.isalpha() for c in value):
             raise serializers.ValidationError(
                 "Пароль должен содержать минимум 8 символов, включать буквы и цифры."

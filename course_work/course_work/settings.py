@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'messenger',
     'accounts',
     'profiles',
     'corsheaders',
@@ -46,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'channels',
+    'messenger',
 ]
 
 ASGI_APPLICATION = 'course_work.asgi.application'
@@ -116,9 +116,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'messenger_db',
-        'USER': 'root_user',
-        'PASSWORD': 'password_user',
-        'HOST': 'db',
+        'USER': 'root',
+        'PASSWORD': 'srenk',
+        'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',

@@ -26,5 +26,5 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('messenger/', include('messenger.urls')),
-    path('messenger/ws/', include(routing.websocket_urlpatterns)),
+#    path('messenger/ws/', include(routing.websocket_urlpatterns)),
 ]
