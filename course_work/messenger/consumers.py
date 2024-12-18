@@ -17,15 +17,21 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f'chat_{self.room_name}'
 
         self.user = self.scope['user']
+
+        print(f"Attempting to connect: user={self.user}, room_name={self.room_name}")
         try:
             self.room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
+            print(f"Room found: {self.room}")
         except ChatRoom.DoesNotExist:
+            print("Room does not exist")
             await self.close()
             return
 
         # Проверка, является ли пользователь участником комнаты
         is_member = await sync_to_async(lambda: self.room.members.filter(id=self.user.id).exists())()
+        print(f"Is user a member? {is_member}")
         if not is_member:
+            print("User is not a member of the room")
             await self.close()
             return
 
@@ -34,6 +40,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         await self.accept()
+        print("WebSocket connection accepted")
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
@@ -41,7 +48,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-    async def receive(self, text_data):
+    async def receive(self, text_data=None, bytes_data=None):
         from .models import Message
         data = json.loads(text_data)
         message_content = data.get('message', '').strip()
