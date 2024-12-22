@@ -1,13 +1,7 @@
-import os
-import django
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'course_work.settings')
-django.setup()
-
 import json
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ChatRoom
+from .models import ChatRoom, Message
 from .serializers import MessageSerializer
 
 
@@ -19,6 +13,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         self.user = self.scope['user']
 
         print(f"Attempting to connect: user={self.user}, room_name={self.room_name}")
+
         try:
             self.room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
             print(f"Room found: {self.room}")
@@ -28,7 +23,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             return
 
         # Проверка, является ли пользователь участником комнаты
-        is_member = await sync_to_async(lambda: self.room.members.filter(id=self.user.id).exists())()
+        is_member = await sync_to_async(self.room.members.filter(id=self.user.id).exists)()
         print(f"Is user a member? {is_member}")
         if not is_member:
             print("User is not a member of the room")
@@ -39,7 +34,22 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+
         await self.accept()
+
+        # Загрузка сообщений и сериализация в асинхронном контексте
+        message_data = await sync_to_async(self.get_message_history)()
+        print("Message History:", message_data)
+        # Отправка истории сообщений
+        try:
+            await self.send(text_data=json.dumps({
+                'type': 'message_history',
+                'messages': message_data
+            }))
+            print("Message sent successfully")
+        except Exception as e:
+            print("Error sending message:", str(e))
+
         print("WebSocket connection accepted")
 
     async def disconnect(self, close_code):
@@ -49,14 +59,16 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data=None, bytes_data=None):
-        from .models import Message
         data = json.loads(text_data)
         message_content = data.get('message', '').strip()
+
         if not message_content:
             return
+
         room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
         message = await sync_to_async(Message.objects.create)(room=room, user=self.user, content=message_content)
         message_data = MessageSerializer(message).data
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -68,3 +80,11 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         message = event['message']
         await self.send(text_data=json.dumps(message))
+
+    @staticmethod
+    def get_message_history():
+        # Получаем все сообщения в чате, упорядоченные по времени
+        print("Fetching messages...")
+        messages = Message.objects.all().order_by('timestamp')
+        print(f"Messages retrieved: {messages.count()}")
+        return MessageSerializer(messages, many=True).data

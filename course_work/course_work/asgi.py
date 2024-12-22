@@ -12,7 +12,6 @@ from messenger.middleware import TokenAuthMiddleware
 from messenger import routing
 
 
-# Настройка ASGI приложения
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": TokenAuthMiddleware(
