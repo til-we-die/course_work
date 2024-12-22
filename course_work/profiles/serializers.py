@@ -6,7 +6,12 @@ from django.contrib.auth.models import User
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['image', 'bio']
+        fields = ['image', 'bio', 'friends']
+
+    @staticmethod
+    def get_friends(obj):
+        friends = obj.friends.all()
+        return [{"id": friend.user.id, "username": friend.user.username} for friend in friends]
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -22,3 +27,16 @@ class UserWithProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'profile', 'posts']
+
+
+class AddFriendSerializer(serializers.Serializer):
+    username = serializers.CharField()
+
+    @staticmethod
+    def validate_username(value):
+        value = value.strip()
+        try:
+            user = User.objects.get(username=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Пользователь с таким именем не найден.")
+        return user
