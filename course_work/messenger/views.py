@@ -22,11 +22,19 @@ class ChatRoomListCreateView(generics.ListCreateAPIView):
         except User.DoesNotExist:
             raise serializers.ValidationError("Recipient does not exist.")
 
-        chat_room_name = f"{user.username}_{recipient.username}"
-        chat_room = serializer.save(name=chat_room_name)
+        chat_room_name = f"{min(user.username, recipient.username)}_{max(user.username, recipient.username)}"
 
-        chat_room.members.add(user)
-        chat_room.members.add(recipient)
+        # Проверяем, существует ли уже комната с таким именем
+        existing_room = ChatRoom.objects.filter(name=chat_room_name).first()
+        if existing_room:
+            if not existing_room.members.filter(id=user.id).exists():
+                existing_room.members.add(user)
+            if not existing_room.members.filter(id=recipient.id).exists():
+                existing_room.members.add(recipient)
+            raise serializers.ValidationError("Chat room already exists.")
+
+        chat_room = serializer.save(name=chat_room_name)
+        chat_room.members.add(user, recipient)
 
 
 class MessageListCreateView(APIView):
