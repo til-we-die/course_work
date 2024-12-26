@@ -37,8 +37,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        # Загрузка сообщений и сериализация в асинхронном контексте
-        message_data = await sync_to_async(self.get_message_history)()
+        message_data = await sync_to_async(self.get_message_history)(self.room)
         print("Message History:", message_data)
         # Отправка истории сообщений
         try:
@@ -82,9 +81,8 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(message))
 
     @staticmethod
-    def get_message_history():
-        # Получаем все сообщения в чате, упорядоченные по времени
-        print("Fetching messages...")
-        messages = Message.objects.all().order_by('timestamp')
+    def get_message_history(room):
+        print(f"Fetching messages for room: {room}")
+        messages = Message.objects.filter(room=room).order_by('timestamp')
         print(f"Messages retrieved: {messages.count()}")
         return MessageSerializer(messages, many=True).data
