@@ -38,7 +38,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         message_data = await sync_to_async(self.get_message_history)(self.room)
-        print("Message History:", message_data)
+#        print("Message History:", message_data)
         # Отправка истории сообщений
         try:
             await self.send(text_data=json.dumps({
